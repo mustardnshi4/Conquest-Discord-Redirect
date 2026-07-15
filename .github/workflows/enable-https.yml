@@ -1,0 +1,28 @@
+name: Enable custom-domain HTTPS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Wait for certificate and enforce HTTPS
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          for attempt in $(seq 1 60); do
+            if gh api --method PUT "repos/${REPOSITORY}/pages" -F https_enforced=true; then
+              echo "HTTPS enforcement enabled."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "GitHub did not issue the certificate within 30 minutes." >&2
+          exit 1
